@@ -1,0 +1,80 @@
+---
+- name: Ensure shadowsocks-libev's dependencies are installed (RedHat).
+  yum: "pkg={{ item }} state=installed"
+  with_items:
+    - gettext-devel
+    - expat-devel
+    - curl-devel
+    - zlib-devel
+    - perl-devel
+    - openssl-devel
+    - subversion-perl
+    - make
+    - gcc
+  when: ansible_os_family == 'RedHat'
+
+- name: Ensure shadowsocks-libev's dependencies are installed (Debian).
+  apt: "pkg={{ item }} state=installed"
+  with_items:
+    - libtool
+    - autoconf
+    - asciidoc
+    - xmlto
+    - libcurl4-gnutls-dev
+    - libexpat1-dev
+    - gettext
+    - libssl-dev
+    - build-essential
+    - gcc
+    - libpcre3-dev
+    - gawk
+    - debhelper
+    - dh-systemd
+    - init-system-helpers
+    - pkg-config
+    - apg
+  when: ansible_os_family == 'Debian'
+
+- name: Get installed version
+  shell: "which ss-server >/dev/null 2>&1 && (ss-server --help | grep '^shadowsocks-libev' | sed -e 's!^shadowsocks-libev \\([0-9\\.]*\\) .*!\\1!')"
+  changed_when: false
+  failed_when: false
+  # Ansible 1.8 feature.
+  # warn: no
+  register: shadowsocks_libev_installed_version
+
+- name: Force shadowsocks-libev install if the version numbers do not match
+  set_fact:
+    shadowsocks_libev_reinstall_from_source: true
+  when: 'shadowsocks_libev_install_from_source_force_update and (shadowsocks_libev_installed_version|success and (shadowsocks_libev_installed_version.stdout | regex_replace("^.*?([0-9\.]+)$", "\\1") | version_compare(shadowsocks_libev_version, operator="!=")))'
+
+- name: Download shadowsocks-libev.
+  get_url:
+    url: "https://github.com/shadowsocks/shadowsocks-libev/archive/v{{ shadowsocks_libev_version }}.tar.gz"
+    dest: "{{ workspace }}/shadowsocks-libev-{{ shadowsocks_libev_version }}.tar.gz"
+  when: shadowsocks_libev_installed_version|failed or shadowsocks_libev_reinstall_from_source
+
+- name: Expand shadowsocks-libev archive.
+  unarchive:
+    src: "{{ workspace }}/shadowsocks-libev-{{ shadowsocks_libev_version }}.tar.gz"
+    dest: "{{ workspace }}"
+    creates: "{{ workspace }}/shadowsocks-libev-{{ shadowsocks_libev_version }}/README.md"
+    copy: no
+  when: shadowsocks_libev_installed_version|failed or shadowsocks_libev_reinstall_from_source
+
+- name: Configure shadowsocks-libev.
+  command: >
+    ./configure
+    chdir={{ workspace }}/shadowsocks-libev-{{ shadowsocks_libev_version }}
+  when: shadowsocks_libev_installed_version|failed or shadowsocks_libev_reinstall_from_source
+  become: yes
+
+- name: Build shadowsocks-libev.
+  command: >
+    make prefix={{ shadowsocks_libev_install_path }} {{ item }}
+    chdir={{ workspace }}/shadowsocks-libev-{{ shadowsocks_libev_version }}
+  with_items:
+    - all
+    - install
+  when: shadowsocks_libev_installed_version|failed or shadowsocks_libev_reinstall_from_source
+  become: yes
