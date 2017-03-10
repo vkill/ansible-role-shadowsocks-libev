@@ -1,42 +1,24 @@
 ---
-- name: Ensure shadowsocks-libev's dependencies are installed (RedHat).
-  yum: "pkg={{ item }} state=installed"
-  with_items:
-    - gettext-devel
-    - expat-devel
-    - curl-devel
-    - zlib-devel
-    - perl-devel
-    - openssl-devel
-    - subversion-perl
-    - make
-    - gcc
-  when: ansible_os_family == 'RedHat'
 
 - name: Ensure shadowsocks-libev's dependencies are installed (Debian).
   apt: "pkg={{ item }} state=installed"
   with_items:
-    - libtool
+    - gettext
+    - build-essential
     - autoconf
+    - libtool
+    - libpcre3-dev
     - asciidoc
     - xmlto
-    - libcurl4-gnutls-dev
-    - libexpat1-dev
-    - gettext
-    - libssl-dev
-    - build-essential
-    - gcc
-    - libpcre3-dev
-    - gawk
-    - debhelper
-    - dh-systemd
-    - init-system-helpers
-    - pkg-config
-    - apg
+    - libev-dev
+    - libudns-dev
+    - automake
+    - libmbedtls-dev
+    - sudo
   when: ansible_os_family == 'Debian'
 
 - name: Get installed version
-  shell: "which ss-server >/dev/null 2>&1 && (ss-server --help | grep '^shadowsocks-libev' | sed -e 's!^shadowsocks-libev \\([0-9\\.]*\\) .*!\\1!')"
+  shell: "which ss-server >/dev/null 2>&1 && (ss-server --help | grep '^shadowsocks-libev' | sed -e 's!^shadowsocks-libev \\([0-9\\.]*\\).*!\\1!')"
   changed_when: false
   failed_when: false
   # Ansible 1.8 feature.
@@ -62,19 +44,9 @@
     copy: no
   when: shadowsocks_libev_installed_version|failed or shadowsocks_libev_reinstall_from_source
 
-- name: Configure shadowsocks-libev.
+- name: Build deb and install deb for shadowsocks-libev.
   command: >
-    ./configure
-    chdir={{ workspace }}/shadowsocks-libev-{{ shadowsocks_libev_version }}
-  when: shadowsocks_libev_installed_version|failed or shadowsocks_libev_reinstall_from_source
-  become: yes
-
-- name: Build shadowsocks-libev.
-  command: >
-    make prefix={{ shadowsocks_libev_install_path }} {{ item }}
-    chdir={{ workspace }}/shadowsocks-libev-{{ shadowsocks_libev_version }}
-  with_items:
-    - all
-    - install
+    ./build_deb.sh
+    chdir={{ workspace }}/shadowsocks-libev-{{ shadowsocks_libev_version }}/scripts
   when: shadowsocks_libev_installed_version|failed or shadowsocks_libev_reinstall_from_source
   become: yes

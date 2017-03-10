@@ -5,7 +5,7 @@ workspace: /usr/local/src
 # the 'shadowsocks_libev_version' variable instead of using a package.
 shadowsocks_libev_install_from_source: true
 shadowsocks_libev_install_path: "/usr"
-shadowsocks_libev_version: "2.5.5"
+shadowsocks_libev_version: "3.0.3"
 
 # If shadowsocks-libev is already installed at and older version, force a new source build.
 # Only applies if shadowsocks_libev_install_from_source is `true`.

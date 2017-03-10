@@ -41,4 +41,4 @@ Author Information
 
 vkill <vkill.net@gmail.com>
 
-&copy; 2016
+&copy; 2017
