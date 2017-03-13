@@ -13,7 +13,6 @@
     - libev-dev
     - libudns-dev
     - automake
-    - libmbedtls-dev
     - sudo
   when: ansible_os_family == 'Debian'
 
